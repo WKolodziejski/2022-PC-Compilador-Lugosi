@@ -19,16 +19,16 @@ main {
 		x0 := x1;
 		x1 := x2;
 		i := (i + 1);
-		print (x2);
+		print(x2);
     };
 	
-	ok := assert(x2, 34);
+	ok := m_assert(x2, 34);
 	
 	if ((ok == false)) {
 		print(false);
 	};
 }
 
-function bool assert(int a, int b) {
+function bool m_assert(int a, int b) {
 	return (a == b);
 }
