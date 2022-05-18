@@ -1,0 +1,444 @@
+PARSER_BEGIN(Lugosi)
+
+import java.io.*;
+import java.util.*;
+
+public class Lugosi {
+
+    public static void main(String[] args) throws ParseException, IOException {
+        Lugosi parser = new Lugosi(new FileInputStream(args[0]));
+        Tree tree = parser.Lugosi();
+        compile(tree, args[0]);
+    }
+
+    public static void compile(Tree tree, String file) {
+        System.out.println(tree);
+    }
+
+}
+
+class Tree {
+    Main main;
+    List<Func> funcs;
+
+    public Tree(Main main, List<Func> funcs) {
+        this.main = main;
+        this.funcs = funcs;
+    }
+}
+
+class Main {
+    List<Var> vars;
+    List<Com> coms;
+
+    public Main(List<Var> vars, List<Com> coms) {
+        this.vars = vars;
+        this.coms = coms;
+    }
+}
+
+class Func {
+    String type;
+    String id;
+    List<Arg> args;
+    List<Var> vars;
+    List<Com> coms;
+
+    public Func(String type, String id, List<Arg> args, List<Var> vars, List<Com> coms) {
+        this.type = type;
+        this.id = id;
+        this.args = args;
+        this.vars = vars;
+        this.coms = coms;
+    }
+}
+
+class Var {
+    String type;
+    String id;
+
+    public Var(String type, String id) {
+        this.type = type;
+        this.id = id;
+    }
+}
+
+abstract class Com {}
+
+abstract class Exp {}
+
+class Arg extends Var {
+
+    public Arg(String type, String id) {
+        super(type, id);
+    }
+}
+
+abstract class ComId extends Com {
+    String id;
+}
+
+class Atrib extends ComId {
+    Exp exp;
+
+    public Atrib(Exp exp) {
+        this.exp = exp;
+    }
+}
+
+class VoidCall extends ComId {
+    List<Exp> exp;
+
+    public VoidCall(List<Exp> exp) {
+        this.exp = exp;
+    }
+}
+
+abstract class Op extends Exp {
+    Exp exp1;
+    Exp exp2;
+}
+
+class Add extends Op {}
+
+class Sub extends Op {}
+
+class Mult extends Op {}
+
+class Div extends Op {}
+
+class And extends Op {}
+
+class Or extends Op {}
+
+class Less extends Op {}
+
+class More extends Op {}
+
+class Eq extends Op {}
+
+class Bool extends Exp {
+    String bool;
+
+    public Bool(String bool) {
+        this.bool = bool;
+    }
+}
+
+class Num extends Exp {
+    String num;
+
+    public Num(String num) {
+        this.num = num;
+    }
+}
+
+class RetCall extends Exp {
+    String id;
+    List<Exp> exps;
+
+    public RetCall(String id, List<Exp> exps) {
+        this.id = id;
+        this.exps = exps;
+    }
+}
+
+abstract class BlockCom extends Com {
+    Exp exp;
+    List<Com> coms;
+
+    public BlockCom(Exp exp, List<Com> coms) {
+        this.exp = exp;
+        this.coms = coms;
+    }
+}
+
+abstract class SimpleCom extends Com {
+    Exp exp;
+
+    public SimpleCom(Exp exp) {
+        this.exp = exp;
+    }
+}
+
+class If extends BlockCom {
+    public If(Exp exp, List<Com> coms) {
+        super(exp, coms);
+    }
+}
+
+class While extends BlockCom {
+    public While(Exp exp, List<Com> coms) {
+        super(exp, coms);
+    }
+}
+
+class Do extends BlockCom {
+    public Do(Exp exp, List<Com> coms) {
+        super(exp, coms);
+    }
+}
+
+class Return extends SimpleCom {
+    public Return(Exp exp) {
+        super(exp);
+    }
+}
+
+class Print extends SimpleCom {
+    public Print(Exp exp) {
+        super(exp);
+    }
+}
+
+PARSER_END(Lugosi)
+
+SKIP : {
+                    " "
+    |               "\t"
+    |               "\n"
+    |               "\r"
+}
+
+TOKEN : {
+      <MAIN:        "main">
+    | <VAR:         "var">
+    | <TIPO:        ("int" | "bool" | "float" | "void")>
+    | <IF:          "if">
+    | <WHILE:       "while">
+    | <DO:          "do">
+    | <RET:         "return">
+    | <FUN:         "function">
+    | <PRINT:       "print">
+}
+
+TOKEN : {
+      <ACHAVES:     "{">
+    | <FCHAVES:     "}">
+    | <APARENTESES: "(">
+    | <FPARENTESES: ")">
+    | <PVIRGULA:    ";">
+    | <VIRGULA:    ",">
+}
+
+TOKEN : {
+      <ADD:         "+">
+    | <SUB:         "-">
+    | <MULT:        "*">
+    | <DIV:         "/">
+    | <AND:         "&&">
+    | <OR:          "||">
+    | <LESSTHAN:    "<">
+    | <MORETHAN:    ">">
+    | <EQUALS:      "==">
+    | <ATRIB:       ":=">
+}
+
+TOKEN : {
+      <NUM:         (["0"-"9"])+ ("."(["0"-"9"])+)? ("E" ("+"|"-")? (["0"-"9"])+)?>
+    | <ID:          ["a"-"z","A"-"Z"] (["a"-"z","A"-"Z","0"-"9"])* ("_"(["a"-"z","A"-"Z","0"-"9"])+)*>
+    | <BOOL:        ("true" | "false")>
+}
+
+Tree Lugosi():
+{
+    Main main;
+    List<Func> funcs = null;
+}
+{
+    main = Main() (funcs =  Func())? <EOF>
+
+    {return new Tree(main, funcs);}
+}
+
+Main Main() :
+{
+    List<Var> vars;
+    List<Com> coms;
+}
+{
+    <MAIN> <ACHAVES> vars = VarDecl() coms = SeqComandos() <FCHAVES>
+
+    {return new Main(vars, coms);}
+}
+
+List<Func> Func() :
+{
+    Token tipo;
+    String id;
+    List<Arg> args = null;
+    List<Var> vars;
+    List<Com> coms;
+    List<Func> funcs = new ArrayList<Func>();
+}
+{
+     (<FUN> tipo = <TIPO> id = TokenId() <APARENTESES> (args = ListaArg())? <FPARENTESES> <ACHAVES> vars = VarDecl() coms = SeqComandos() <FCHAVES>
+     {funcs.add(new Func(tipo.image, id, args, vars, coms));})+
+
+     {return funcs;}
+}
+
+List<Var> VarDecl():
+{
+    Token tipo;
+    String id;
+    List<Var> vars = new ArrayList<Var>();
+}
+{
+    (<VAR> tipo = <TIPO> id = TokenId() <PVIRGULA> {vars.add(new Var(tipo.image, id));})*
+
+    {return vars;}
+}
+
+String TokenId():
+{
+    Token id;
+}
+{
+    id = <ID>
+
+    {return id.image;}
+}
+
+String TokenNum():
+{
+    Token num;
+}
+{
+    num = <NUM>
+
+    {return num.image;}
+}
+
+List<Com> SeqComandos() :
+{
+    List<Com> coms = new ArrayList<Com>();
+    Com com;
+}
+{
+    (com = Comando() {coms.add(com);})*
+
+    {return coms;}
+}
+
+Com Comando() :
+{
+    String id;
+    Com com;
+    Exp exp;
+    List<Com> coms;
+}
+{
+//      TokenId() <ATRIB> Exp() <PVIRGULA>
+//    | TokenId() <APARENTESES> (ListaExp())? <FPARENTESES> <PVIRGULA>
+      id = TokenId() com = ComandoTokenId()                             {((ComId) com).id = id;}
+    | <IF> <APARENTESES> exp = Exp() <FPARENTESES> <ACHAVES> coms = SeqComandos() <FCHAVES> <PVIRGULA>          {com = new If(exp, coms);}
+    | <WHILE> <APARENTESES> exp = Exp() <FPARENTESES> <DO> <ACHAVES> coms = SeqComandos() <FCHAVES> <PVIRGULA> {com = new While(exp, coms);}
+    | <DO> <ACHAVES> coms = SeqComandos() <FCHAVES> <WHILE> <APARENTESES> exp = Exp() <FPARENTESES> <PVIRGULA> {com = new Do(exp, coms);}
+    | <RET> exp = Exp() <PVIRGULA>  {com = new Return(exp);}
+    | <PRINT> <APARENTESES> exp = Exp() <FPARENTESES> <PVIRGULA> {com = new Print(exp);}
+
+    {return com;}
+}
+
+ComId ComandoTokenId() :
+{
+    ComId com;
+    Exp exp;
+    List<Exp> exps = null;
+}
+{
+      <ATRIB> exp = Exp() <PVIRGULA> {com = new Atrib(exp);}
+    | <APARENTESES> (exps = ListaExp())? <FPARENTESES> <PVIRGULA> {com = new VoidCall(exps);}
+
+    {return com;}
+}
+
+Exp Exp() :
+{
+    Op op;
+    Exp exp;
+    Exp exp1;
+    Exp exp2;
+}
+{
+      <APARENTESES> exp1 = Exp() op = Op() exp2 = Exp() <FPARENTESES> {op.exp1 = exp1; op.exp2 = exp2; exp = op;}
+    | exp = Fator()
+
+    {return exp;}
+}
+
+List<Exp> ListaExp() :
+{
+    List<Exp> exps = new ArrayList<Exp>();
+    Exp exp;
+}
+{
+//      Exp()
+//    | ListaExp() <VIRGULA> Exp()
+    exp = Exp() {exps.add(exp);}
+    (<VIRGULA> Exp() {exps.add(exp);})*
+
+    {return exps;}
+}
+
+List<Arg> ListaArg() :
+{
+    Token tipo;
+    String id;
+    List<Arg> args = new ArrayList<Arg>();
+}
+{
+//      <TIPO> TokenId()
+//    | ListaArg() <VIRGULA> <TIPO> TokenId()
+    tipo = <TIPO> id = TokenId() {args.add(new Arg(tipo.image, id));}
+    (<VIRGULA> tipo = <TIPO> id = TokenId() {args.add(new Arg(tipo.image, id));})*
+
+    {return args;}
+}
+
+Exp Fator() : //Fatoração
+{
+    String num;
+    String id;
+    Token token;
+    Exp exp;
+    List<Exp> exps;
+}
+{
+//      TokenId()
+//    | TokenId() <APARENTESES> (ListaExp())? <FPARENTESES>
+    id = TokenId() exps = FatorTokenId() {exp = new RetCall(id, exps);}
+    | num = TokenNum() {exp = new Num(num);}
+    | token = <BOOL> {exp = new Bool(token.image);}
+
+    {return exp;}
+}
+
+List<Exp> FatorTokenId() :
+{
+    List<Exp> exps = null;
+}
+{
+    (<APARENTESES> (exps = ListaExp())? <FPARENTESES>)?
+
+    {return exps;}
+}
+
+Op Op() :
+{
+    Op op;
+}
+{
+      <ADD>         {op = new Add();}
+    | <SUB>         {op = new Sub();}
+    | <MULT>        {op = new Mult();}
+    | <DIV>         {op = new Div();}
+    | <AND>         {op = new And();}
+    | <OR>          {op = new Or();}
+    | <LESSTHAN>    {op = new Less();}
+    | <MORETHAN>    {op = new More();}
+    | <EQUALS>      {op = new Eq();}
+
+    {return op;}
+}
