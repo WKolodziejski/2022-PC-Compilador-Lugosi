@@ -85,7 +85,7 @@ public class Lugosi {
 
         StringBuilder builderCom = new StringBuilder();
         for (Com com : scope.coms)
-            builderCom.append(parseComFunc(com, vars, funcs, f));
+            builderCom.append(parseCom(com, vars, funcs, f));
 
         return header + builderCom + "}\n";
     }
@@ -121,11 +121,7 @@ public class Lugosi {
         return type;
     }
 
-    public static String parseCom(Com com, Map<String, Var> vars, Map<String, Func> funcs) throws Exception {
-        return parseComFunc(com, vars, funcs, "");
-    }
-
-    public static String parseComFunc(Com com, Map<String, Var> vars, Map<String, Func> funcs, String func) throws Exception {
+    public static String parseCom(Com com, Map<String, Var> vars, Map<String, Func> funcs, String func) throws Exception {
         if (com instanceof ComId) {
             String id = ((ComId) com).id;
 
@@ -210,7 +206,7 @@ public class Lugosi {
             StringBuilder builder = new StringBuilder();
 
             for (Com c : coms)
-                builder.append(parseCom(c, vars, funcs));
+                builder.append(parseCom(c, vars, funcs, func));
 
             if (com instanceof If)
                 return "if (" + parseExp(exp, vars, funcs) + ") {\n" + builder + "}\n";
@@ -228,7 +224,7 @@ public class Lugosi {
 
             if (com instanceof Return) {
                 if (!funcs.containsKey(func))
-                    throw new Exception("Function cannot have a return in " + com);
+                    throw new Exception("Function cannot have a return in " + func);
 
                 if (funcs.get(func).type.equals("bool"))
                     resolveExpBool(exp, vars, funcs);
