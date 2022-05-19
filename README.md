@@ -1,6 +1,11 @@
-## Compilar:
+## Preparar
 ```
-javacc Lugosi.jj && javac *.java
+mkdirbuild && cd build
+```
+
+## Compilar
+```
+javacc ../Lugosi.jj && javac *.java
 ```
 
 ## Executar
