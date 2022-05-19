@@ -24,7 +24,6 @@ public class Lugosi {
         FileWriter writer = new FileWriter(name + ".java");
         writer.write("public class " + name + " {\n\n");
 
-        //TODO add suporte para sobrecarga
         Map<String, Func> funcs = new HashMap<String, Func>();
         for (Func func : tree.funcs) {
             if (funcs.containsKey(func.id))
@@ -103,31 +102,29 @@ public class Lugosi {
     }
 
     public static String parseVar(Var var) throws Exception {
-        String type = parseType(var.type);
+        if (var.type.equals("bool"))
+            return "boolean" + " " + var.id + " = " + "false";
 
-        if (type.equals("boolean"))
-            return type + " " + var.id + " = " + "false";
+        if (var.type.equals("int"))
+            return var.type + " " + var.id + " = " + "0";
 
-        if (type.equals("int"))
-            return type + " " + var.id + " = " + "0";
+        if (var.type.equals("float"))
+            return "double" + " " + var.id + " = " + "0f";
 
-        if (type.equals("float"))
-            return type + " " + var.id + " = " + "0f";
+        if (var.type.equals("void"))
+            throw new Exception("Type void not allowed");
 
-        if (type.equals("void"))
-            return type + " " + var.id;
-            //throw new Exception("Type void is not allowed in variable declarations");
-
-        throw new Exception("Type " + type + " not recognized " + var);
+        throw new Exception("Type " + var.type + " not recognized " + var);
     }
 
     public static String parseArg(Arg arg) throws Exception {
-        String type = parseType(arg.type);
+        if (arg.type.equals("bool") || arg.type.equals("int") || arg.type.equals("float"))
+            return arg.type + " " + arg.id;
 
-        if (type.equals("boolean") || type.equals("int") || type.equals("float"))
-            return type + " " + arg.id;
+        if (arg.type.equals("void"))
+            throw new Exception("Type void not allowed");
 
-        throw new Exception("Type " + type + " not recognized " + arg);
+        throw new Exception("Type " + arg.type + " not recognized " + arg);
     }
 
     public static String parseType(String type) throws Exception {
@@ -193,6 +190,9 @@ public class Lugosi {
 
                     if (!vars.get(id).type.equals(funcs.get(f).type))
                         throw new Exception("Incompatible type of " + id + " with " + f + ": " + exp);
+
+                    if (funcs.get(f).type.equals("void"))
+                        throw new Exception("Type void cannot have a return value:" + exp);
                 }
 
                 return id + " = " + parsed + ";\n";
@@ -418,8 +418,16 @@ public class Lugosi {
                 if (!vars.containsKey(v))
                     throw new Exception("Var " + v + " is undefined "  + exp);
 
-                if (!vars.get(v).type.equals("int") && !vars.get(v).type.equals("float"))
-                    throw new Exception("Incompatible type of " + v + " with " + exp);
+                if (vars.get(v).type.equals("int") || vars.get(v).type.equals("float"))
+                    return 1;
+
+                if (vars.get(v).type.equals("bool"))
+                    return 0;
+
+                if (vars.get(v).type.equals("void"))
+                    return -1;
+
+                System.out.println("ID");
             }
 
             if (exp instanceof RetCall) {
@@ -431,114 +439,18 @@ public class Lugosi {
                 if (!funcs.containsKey(f))
                     throw new Exception("Function " + f + " is undefined " + exp);
 
-                if (!funcs.get(f).type.equals("int") && !funcs.get(f).type.equals("float"))
-                    throw new Exception("Incompatible type of " + f + " with " + exp);
+                if (funcs.get(f).type.equals("int") || funcs.get(f).type.equals("float"))
+                    return 1;
+
+                if (funcs.get(f).type.equals("bool"))
+                    return 0;
+
+                if (funcs.get(f).type.equals("void"))
+                    throw new Exception("Type void cannot have a return " + exp);
             }
 
-            return -1;
+            throw new Exception("EXP not resolved: " + exp);
         }
-
-//    public static int resolveExpNum(Exp exp, Map<String, Var> vars, Map<String, Func> funcs) throws Exception {
-//        if (exp instanceof Bool)
-//            return 0;
-//            //throw new Exception("Incompatible operands type in" + exp);
-//
-//        if (exp instanceof Num)
-//            return 1;
-//
-//        if (exp instanceof Op) {
-//            Op op = (Op) exp;
-//
-//            if (op.op.equals("&&") || op.op.equals("||")) {
-//                int a = resolveExpBool(op.exp1, vars, funcs);
-//                int b = resolveExpBool(op.exp2, vars, funcs);
-//
-//                if (a != b)
-//                    throw new Exception("Incompatible operands type in" + exp);
-//
-//                return a;
-//            }
-//        }
-//
-//        if (exp instanceof Id) {
-//            String v = ((Id) exp).id;
-//
-//            if (words.contains(v))
-//                throw new Exception(v + " is not a valid name");
-//
-//            if (!vars.containsKey(v))
-//                throw new Exception("Var " + v + " is undefined "  + exp);
-//
-//            if (!vars.get(v).type.equals("int") && !vars.get(v).type.equals("float"))
-//                throw new Exception("Incompatible type of " + v + " with numeric " + exp);
-//        }
-//
-//        if (exp instanceof RetCall) {
-//            String f = ((RetCall) exp).id;
-//
-//            if (words.contains(f))
-//                throw new Exception(f + " is not a valid name");
-//
-//            if (!funcs.containsKey(f))
-//                throw new Exception("Function " + f + " is undefined " + exp);
-//
-//            if (!funcs.get(f).type.equals("int") && !funcs.get(f).type.equals("float"))
-//                throw new Exception("Incompatible type of " + f + " with numeric " + exp);
-//        }
-//
-//        return 1;
-//    }
-//
-//    public static int resolveExpBool(Exp exp, Map<String, Var> vars, Map<String, Func> funcs) throws Exception {
-//        if (exp instanceof Num)
-//            return 1;
-//            //throw new Exception("Incompatible operands type " + exp);
-//
-//        if (exp instanceof Bool)
-//            return 0;
-//
-//        if (exp instanceof Op) {
-//            Op op = (Op) exp;
-//
-//            if (op.op.equals("+") || op.op.equals("-") || op.op.equals("*") || op.op.equals("/") || op.op.equals("<") || op.op.equals(">")) {
-//                int a = resolveExpNum(op.exp1, vars, funcs);
-//                int b = resolveExpNum(op.exp2, vars, funcs);
-//
-//                if (a != b)
-//                    throw new Exception("Incompatible operands type " + exp);
-//
-//                return a;
-//            }
-//        }
-//
-//        if (exp instanceof Id) {
-//            String v = ((Id) exp).id;
-//
-//            if (words.contains(v))
-//                throw new Exception(v + " is not a valid name");
-//
-//            if (!vars.containsKey(v))
-//                throw new Exception("Var " + v + " is undefined "  + exp);
-//
-//            if (!vars.get(v).type.equals("bool"))
-//                throw new Exception("Incompatible type of " + v + " with boolean " + exp);
-//        }
-//
-//        if (exp instanceof RetCall) {
-//            String f = ((RetCall) exp).id;
-//
-//            if (words.contains(f))
-//                throw new Exception(f + " is not a valid name");
-//
-//            if (!funcs.containsKey(f))
-//                throw new Exception("Function " + f + " is undefined " + exp);
-//
-//            if (!funcs.get(f).type.equals("bool"))
-//                throw new Exception("Incompatible type of " + f + " with boolean " + exp);
-//        }
-//
-//        return 0;
-//    }
 }
 
 class Tree {
@@ -964,7 +876,7 @@ List<Exp> FatorTokenId() :
     List<Exp> exps = null;
 }
 {
-    (<APARENTESES> (exps = ListaExp())? <FPARENTESES>)?
+    (<APARENTESES> (exps = ListaExp())? <FPARENTESES> {exps = exps == null ? new ArrayList<Exp>() : exps;})?
 
     {return exps;}
 }
