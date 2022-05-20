@@ -1,32 +1,35 @@
 main {
     var int x0;
     var int x1;
-	var int x2;
+	var int f;
     var int n;
 	var int i;
-	var bool ok;
 	
-	 n := 10;
-	 i := 0;
-	x0 := 1;
+	 n := 20;
+	 i := 2;
+	x0 := 0;
 	x1 := 1;
 	
 	print (x0);
 	print (x1);
 	
     while ((i < (n + 1))) do {
-        x2 := (x0 + x1);
+        f := (x0 + x1);
 		x0 := x1;
-		x1 := x2;
+		x1 := f;
 		i := (i + 1);
-		print(x2);
+		print(f);
     };
-	
-	ok := m_assert(x2, 34);
-	
-	if ((ok == false)) {
-		print(false);
-	};
+
+	print(m_assert(f, fib(n)));
+}
+
+function int fib(int n) {
+    if ((n < 2)) {
+        return n;
+    };
+
+    return (fib((n - 1)) + fib((n - 2)));
 }
 
 function bool m_assert(int a, int b) {

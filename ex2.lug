@@ -1,6 +1,8 @@
 main {
     var int x;
-    x := fatorial (10);
+    var int n;
+    n := 10;
+    x := fatorial (n);
 
     if ((x > 0)) {
         print (x);
